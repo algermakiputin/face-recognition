@@ -1,0 +1,27 @@
+<html>
+    <header>
+        <title>Face ID</title>
+    </header>
+    
+    <style> 
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            align-content: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        canvas {
+            position: absolute;
+        }
+    </style>
+    <body>
+        <video id="video" height="550" width="720" controls muted autoplay></video> 
+    </body>
+    <script defer src="/js/face-api.min.js"></script>
+    <script defer src="/js/script.js"></script>
+</html>
