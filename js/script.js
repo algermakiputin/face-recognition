@@ -9,17 +9,19 @@ Promise.all([
 function start() {
     document.body.append('Models Loaded')
     
-    // navigator.getUserMedia(
-    //     { video:{} },
-    //     stream => video.srcObject = stream,
-    //     err => console.error(err)
-    // )
+    navigator.getUserMedia(
+        { video:{} },
+        stream => video.srcObject = stream,
+        err => console.error(err)
+    )
     
-    video.src = '../videos/speech.mp4' 
+    // video.src = '../videos/speech.mp4' 
     recognizeFaces()
 }
 
 async function recognizeFaces() {
+    const labeledFaceDescriptors = await loadLabeledImages()
+    const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6)
 
     video.addEventListener('play', async() => {
         console.log("playing");
@@ -36,26 +38,30 @@ async function recognizeFaces() {
             const resizedDetections = faceapi.resizeResults(detections, displaySize);
             canvas.getContext('2d').clearRect(0,0, canvas.width, canvas.height);
 
-
+            const results = resizedDetections.map(d => faceMatcher.findBestMatch(d.descriptor))
             
+            results.forEach((result, i) => {
+              
+                const box = resizedDetections[i].detection.box
+                const drawBox = new faceapi.draw.DrawBox(box, { label: result.toString() })
+                drawBox.draw(canvas)
+            });
         },100);
     });
 }
 
 function loadLabeledImages() {
-    const labels = ['Black Widow', 'Captain America', 'Hawkeye', 'Iron Man', 'Jim Rhodes', 'Thor'];
-
+    const labels = ['Black Widow', 'Captain America', 'Alger Makiputin', 'Captain Marvel', 'Hawkeye', 'Jim Rhodes', 'Thor', 'Tony Stark']
     return Promise.all(
-        labels.map(async(label) => {
-            const descriptions = [];
-            for (let i = 1; i <=2; i++) {
-                const img = await faceapi.fetchImage(`https://localhost:8000/labeled_images/${label}/${i}.jpg`);
-                const detections = await faceapi.detectSingleFaces(img).withFaceLandmarks().withFaceDescriptors();
-                descriptions.push(detections.descriptor);
-            }
-
-            document.body.append('Faces Loaded');
-        })
-    );
-
-}
+      labels.map(async label => {
+        const descriptions = []
+        for (let i = 1; i <= 2; i++) {
+          const img = await faceapi.fetchImage(`http://localhost/labeled_images/${label}/${i}.jpg`)
+          const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor()
+          descriptions.push(detections.descriptor)
+        }
+  
+        return new faceapi.LabeledFaceDescriptors(label, descriptions)
+      })
+    )
+  }
