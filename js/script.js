@@ -236,50 +236,41 @@ async function recognizeFaces() {
         faceapi.matchDimensions(canvas, displaySize);
 
         //Detect faces in the video
-        var interval = setInterval(async() => {
-            const detections = await faceapi.detectAllFaces(video).withFaceLandmarks().withFaceDescriptors();
-            const resizedDetections = faceapi.resizeResults(detections, displaySize);
-            canvas.getContext('2d').clearRect(0,0, canvas.width, canvas.height);
-            const results = resizedDetections.map(d => faceMatcher.findBestMatch(d.descriptor))
-            if (results) {
-                clearInterval(interval); 
-                var id = false;
-                if (results[0].hasOwnProperty('_label')) {
-                    id = results[0]._label;
-                } 
-                employees.forEach((employee) => {
-                    if (employee.name == id) { 
-                        
-                        submitTimeForm(employee.id) 
-                        video.pause();
-                        clearInterval(interval);
-                        $("#menu").show();
-                        $("#faceid").hide();
-                    }
-                }); 
-            } 
-        },100);
+        
+        setInterval(async () => {
+            const detections = await faceapi.detectAllFaces(video).withFaceLandmarks().withFaceDescriptors()
+
+            const resizedDetections = faceapi.resizeResults(detections, displaySize)
+
+            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
+
+            const results = resizedDetections.map((d) => {
+                return faceMatcher.findBestMatch(d.descriptor)
+            })
+            results.forEach( (result, i) => {
+                const box = resizedDetections[i].detection.box
+                const drawBox = new faceapi.draw.DrawBox(box, { label: result.toString() })
+                drawBox.draw(canvas)
+            })
+        }, 100)
         
     });
 } 
 function loadLabeledImages() {
-    
+    const labels = ['Alger Makiputin','Black Widow', 'Captain America', 'Hawkeye' , 'Jim Rhodes', 'Tony Stark', 'Thor', 'Captain Marvel']
+ 
     return Promise.all(
-        employees.map(async label => {
-        const descriptions = []
-        for (let i = 1; i <= 2; i++) { 
-          try {
-            const img = await faceapi.fetchImage(`${base_url}/public/payroll/images/${label.id}/${i}.jpg`)
-            const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor()
-            descriptions.push(detections.descriptor)
-            console.log("loaded: label:" + label);
-          } catch (error) {
-              console.log("cant load images");
-          }
-        }
-        
-        return new faceapi.LabeledFaceDescriptors(label.name, descriptions)
-      })
+        labels.map(async (label)=>{
+            const descriptions = []
+            for(let i=1; i<=2; i++) {
+                const img = await faceapi.fetchImage(`https://raw.githubusercontent.com/algermakiputin/face-recognition/main/labeled_images/${label}/${i}.jpg`)
+                const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor()
+                console.log(label + i + JSON.stringify(detections))
+                descriptions.push(detections.descriptor)
+            }
+            document.body.append(label+' Faces Loaded | ')
+            return new faceapi.LabeledFaceDescriptors(label, descriptions)
+        })
     )
 }
 
