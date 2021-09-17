@@ -268,7 +268,7 @@ function loadLabeledImages() {
                 console.log(label + i + JSON.stringify(detections))
                 descriptions.push(detections.descriptor)
             }
-            document.body.append(label+' Faces Loaded | ')
+            // document.body.append(label+' Faces Loaded | ')
             return new faceapi.LabeledFaceDescriptors(label, descriptions)
         })
     )
